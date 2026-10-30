@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      text-align: center;
+    }
+    .live-number {
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffcc00;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div id="rating-value" class="live-number">908</div>
+
+  <script>
+    // Hier holt sich das Skript die Live-Daten von Chess.com und füllt die Zahl
+    async function fetchRating() {
+      try {
+        const response = await fetch('https://api.chess.com/pub/club/shadow-knights34');
+        const data = await response.json();
+        // Falls du über die API an das Rating kommst, hier einsetzen:
+        // document.getElementById('rating-value').innerText = data.dein_rating_feld;
+      } catch (e) {
+        // Fallback
+      }
+    }
+    fetchRating();
+  </script>
+</body>
+</html>
