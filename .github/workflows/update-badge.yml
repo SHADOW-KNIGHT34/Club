@@ -1,0 +1,38 @@
+# ============================================================
+# ============================================================
+# EINBAU IN DIE SIDEBAR (Beispiel):
+# Statt einer festen Zahl setzt du ein Mini-Bild ein:
+#
+#   Aktuell dabei:
+#   <img src="https://raw.githubusercontent.com/SHADOW-KNIGHT34/Club/main/members.svg"
+#        style="height: 14px; vertical-align: middle;" alt="Mitglieder" /> Ritter
+#
+# ============================================================
+
+# ============================================================
+# Datei: .github/workflows/update-badge.yml
+# GitHub Actions: aktualisiert die Zahlen automatisch jede Stunde.
+# ============================================================
+
+ name: Live-Stats Update
+ on:
+   schedule:
+     - cron: "0 * * * *"   # jede volle Stunde
+   workflow_dispatch: {}    # plus manuell startbar
+ permissions:
+   contents: write
+ jobs:
+   update:
+     runs-on: ubuntu-latest
+     steps:
+       - uses: actions/checkout@v4
+       - uses: actions/setup-python@v5
+         with:
+           python-version: "3.12"
+       - run: python badge.py
+       - run: |
+           git config user.name "LiveStats Bot"
+           git config user.email "actions@github.com"
+           git add members.svg rating.svg
+           git diff --cached --quiet || git commit -m "Update live stats"
+           git push
