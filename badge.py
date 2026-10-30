@@ -12,10 +12,10 @@ import json
 import urllib.request
 
 # --- EINSTELLUNGEN -----------------------------------------
-CLUB_SLUG = "DEIN-CLUB-SLUG"   # Der Teil hinter chess.com/club/
+CLUB_SLUG = "shadow-knights34"   # Der Teil hinter chess.com/club/
 # -----------------------------------------------------------
 
-API_URL = f"https://api.chess.com/pub/club/{CLUB_SLUG}"
+API_URL = f"https://api.chess.com/pub/club/shadow-knights34"
 
 headers = {"User-Agent": "ShadowKnightsLiveBadge/1.0 (Club-Sidebar)"}
 req = urllib.request.Request(API_URL, headers=headers)
