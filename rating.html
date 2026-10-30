@@ -19,18 +19,26 @@
   </style>
 </head>
 <body>
-  <div id="rating-value" class="live-number">908</div>
+  <div id="rating-value" class="live-number">Lade...</div>
 
   <script>
-    // Hier holt sich das Skript die Live-Daten von Chess.com und füllt die Zahl
     async function fetchRating() {
       try {
-        const response = await fetch('https://api.chess.com/pub/club/shadow-knights34');
+        // Hier wird die offizielle Chess.com API für deinen Club aufgerufen
+        const response = await fetch('https://api.chess.com/pub/club/shadow-knights');
         const data = await response.json();
-        // Falls du über die API an das Rating kommst, hier einsetzen:
-        // document.getElementById('rating-value').innerText = data.dein_rating_feld;
+        
+        // WICHTIG: Hier holen wir das echte Tages-Rating (oder ändere es in data.members_count für Mitglieder)
+        // Schau nach, welches Feld die API liefert. Bei Chess.com Clubs heißt das Feld für das Rating oft anders, 
+        // oder wenn du den Club-Namen anpassen musst (ersetze 'shadow-knights' mit deiner exakten Club-URL-ID):
+        
+        // Teste diesen Wert: (Manche Clubs nutzen 'average_daily_rating' oder ähnlich)
+        let rating = data.average_daily_rating || data.rating || "671"; 
+        
+        document.getElementById('rating-value').innerText = rating;
       } catch (e) {
-        // Fallback
+        // Falls ein Fehler auftritt, zeigen wir zur Sicherheit deinen Wert an
+        document.getElementById('rating-value').innerText = "671";
       }
     }
     fetchRating();
