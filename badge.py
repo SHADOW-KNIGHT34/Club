@@ -31,7 +31,7 @@ avg_rating = round(data.get("average_daily_rating", 0))
 def make_number_svg(value, filename, color="#7df9ff"):
     svg = (
         '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="20">'
-        f'<text x="0" y="16" font-family="Segoe UI, Arial, sans-serif" '
+        f'<text x="45" y="16" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" '
         f'font-size="14" font-weight="bold" fill="{color}">{value}</text>'
         '</svg>'
     )
