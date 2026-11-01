@@ -1,71 +1,113 @@
 # ============================================================
-# SHADOW KNIGHTS – Live-Zahlen (transparente Einzel-SVGs)
-# Holt Daten aus der chess.com-API und erzeugt pro Zahl ein
-# kleines, transparentes SVG – passend zum Neon-Design der
-# Sidebar. Die SVGs werden per <img> in die HTML-Blöcke
-# eingesetzt (dort, wo die Zahl stehen soll).
+# SHADOW KNIGHTS – Live-Zahlen als PNG (badge.py)
+# Erzeugt transparente PNG-Bilder mit den Live-Zahlen
+# (PNG statt SVG – normale Bilder, die chess.com nicht
+# als Code behandelt). Zusätzlich die Live-Stats-Webseite
+# (index.html) für GitHub Pages.
 #
-# Datei: badge.py
+# badge.py: kompletten Inhalt der alten Datei ersetzen!
 # ============================================================
 
 import json
 import urllib.request
+from PIL import Image, ImageDraw, ImageFont
 
 # --- EINSTELLUNGEN -----------------------------------------
-CLUB_SLUG = "shadow-knights34"   # Der Teil hinter chess.com/club/
-# -----------------------------------------------------------
+CLUB_SLUG = "shadow-knights34"   # Teil hinter chess.com/club/
+CLUB_URL = "https://www.chess.com/club/shadow-knights34"
+# ------------------------------------------------------------
 
-API_URL = f"https://api.chess.com/pub/club/shadow-knights34"
-
+API_URL = f"https://api.chess.com/pub/club/{CLUB_SLUG}"
 headers = {"User-Agent": "ShadowKnightsLiveBadge/1.0 (Club-Sidebar)"}
 req = urllib.request.Request(API_URL, headers=headers)
 
 with urllib.request.urlopen(req) as response:
     data = json.loads(response.read().decode())
 
-# Live-Zahlen aus der API
 members = data.get("members_count", 0)
 avg_rating = round(data.get("average_daily_rating", 0))
 
-# --- Vorlage: transparentes SVG mit nur EINER Zahl ----------
-def make_number_svg(value, filename, color="#7df9ff"):
-    svg = (
-        '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="20">'
-        f'<text x="45" y="16" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" '
-        f'font-size="14" font-weight="bold" fill="{color}">{value}</text>'
-        '</svg>'
-    )
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(svg)
+# --- 1) Transparente PNG-Zahlen ------------------------------
+# Schriftart auf GitHub-Runnern vorhanden (DejaVu Sans Bold)
+FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
-# Mitgliederzahl (Neonblau, wie Überschriften)
-make_number_svg(members, "members.svg", "#7df9ff")
+def make_number_png(value, filename, rgb):
+    font = ImageFont.truetype(FONT_PATH, 28)
+    text = str(value)
+    dummy = Image.new("RGBA", (10, 10))
+    d = ImageDraw.Draw(dummy)
+    bbox = d.textbbox((0, 0), text, font=font)
+    w = bbox[2] - bbox[0]
+    h = bbox[3] - bbox[1]
+    img = Image.new("RGBA", (w + 16, h + 16), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    draw.text((8 - bbox[0], 8 - bbox[1]), text, font=font, fill=rgb + (255,))
+    img.save(filename)
 
-# Durchschnittliches Rating (Violett, wie der Hinweis-Text)
-make_number_svg(avg_rating, "rating.svg", "#b57edd")
+# Mitgliederzahl: Neonblau #7df9ff -> (125, 249, 255)
+make_number_png(members, "members.png", (125, 249, 255))
 
-print(f"OK: {members} Mitglieder (members.svg), Ø {avg_rating} (rating.svg)")
+# Durchschnittsrating: Violett #b57edd -> (181, 126, 221)
+make_number_png(avg_rating, "rating.png", (181, 126, 221))
+
+# --- 2) Live-Stats-Webseite (index.html) ---------------------
+html = f"""<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHADOW KNIGHTS – Live-Stats</title>
+<style>
+  body {{ margin: 0; padding: 40px 20px; background: #0b0b1a;
+         font-family: 'Segoe UI', Arial, sans-serif; color: #e6e6fa; text-align: center; }}
+  .box {{ max-width: 420px; margin: 0 auto; background: rgba(20, 20, 45, 0.6);
+         border: 1px solid #3b3b6d; border-radius: 12px; padding: 25px 20px;
+         box-shadow: 0 0 15px rgba(125, 249, 255, 0.15); }}
+  h1 {{ color: #7df9ff; font-size: 20px; letter-spacing: 2px; margin: 0 0 25px 0; }}
+  .stat {{ margin-bottom: 25px; }}
+  .stat .zahl {{ font-size: 48px; font-weight: bold; color: #7df9ff; line-height: 1.1; }}
+  .stat .label {{ font-size: 13px; color: #b0a8d8; letter-spacing: 2px; margin-top: 4px; }}
+  .stat.violett .zahl {{ color: #b57edd; }}
+  .trenner {{ border: 0; border-top: 1px solid #3b3b6d; margin: 10px 0 25px 0; }}
+  a.button {{ display: inline-block; background: linear-gradient(135deg, #6a5acd, #3b3b6d);
+             color: #7df9ff; font-weight: bold; font-size: 13px; text-decoration: none;
+             padding: 10px 18px; border-radius: 6px; border: 1px solid #7df9ff;
+             box-shadow: 0 0 10px rgba(125, 249, 255, 0.3); letter-spacing: 1px; }}
+  .fussnote {{ margin-top: 20px; font-size: 11px; color: #b0a8d8; font-style: italic; }}
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>&#9876;&#65039; SHADOW KNIGHTS LIVE-STATS &#9876;&#65039;</h1>
+    <div class="stat">
+      <div class="zahl">{members}</div>
+      <div class="label">RITTER IM CLUB</div>
+    </div>
+    <hr class="trenner">
+    <div class="stat violett">
+      <div class="zahl">&#216; {avg_rating}</div>
+      <div class="label">T&Auml;GLICHES-SCHACH-RATING</div>
+    </div>
+    <a class="button" href="{CLUB_URL}" target="_blank" rel="noopener">&#9876;&#65039; ZUM CLUB</a>
+    <div class="fussnote">Diese Zahlen werden automatisch jede Stunde aktualisiert.</div>
+  </div>
+</body>
+</html>"""
+
+with open("index.html", "w", encoding="utf-8") as f:
+    f.write(html)
+
+print(f"OK: {members} Mitglieder, Ø {avg_rating} -> members.png, rating.png, index.html")
 
 # ============================================================
-# EINBAU IN DIE SIDEBAR (Beispiel):
-# Statt einer festen Zahl setzt du ein Mini-Bild ein:
-#
-#   Aktuell dabei:
-#   <img src="https://raw.githubusercontent.com/SHADOW-KNIGHT34/Club/main/members.svg"
-#        style="height: 14px; vertical-align: middle;" alt="Mitglieder" /> Ritter
-#
-# ============================================================
-
-# ============================================================
-# Datei: .github/workflows/update-badge.yml
-# GitHub Actions: aktualisiert die Zahlen automatisch jede Stunde.
+# Datei: .github/workflows/update-badge.yml  (ersetzen!)
 # ============================================================
 
 # name: Live-Stats Update
 # on:
 #   schedule:
-#     - cron: "0 * * * *"   # jede volle Stunde
-#   workflow_dispatch: {}    # plus manuell startbar
+#     - cron: "0 * * * *"
+#   workflow_dispatch: {}
 # permissions:
 #   contents: write
 # jobs:
@@ -76,10 +118,21 @@ print(f"OK: {members} Mitglieder (members.svg), Ø {avg_rating} (rating.svg)")
 #       - uses: actions/setup-python@v5
 #         with:
 #           python-version: "3.12"
+#       - run: pip install pillow
 #       - run: python badge.py
 #       - run: |
 #           git config user.name "LiveStats Bot"
 #           git config user.email "actions@github.com"
-#           git add members.svg rating.svg
+#           git add members.png rating.png index.html
 #           git diff --cached --quiet || git commit -m "Update live stats"
 #           git push
+
+# ============================================================
+# SIDEBAR-EINBAU (PNG über GitHub Pages):
+# ============================================================
+#
+# <img src="https://shadow-knight34.github.io/Club/members.png"
+#      style="height: 16px; vertical-align: middle;" alt="Mitglieder" />
+#
+# <img src="https://shadow-knight34.github.io/Club/rating.png"
+#      style="height: 16px; vertical-align: middle;" alt="Rating" />
