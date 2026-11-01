@@ -34,6 +34,6 @@
        - run: |
            git config user.name "LiveStats Bot"
            git config user.email "actions@github.com"
-           git add members.svg rating.svg
+           git add members.png rating.svg rating.png index.html
            git diff --cached --quiet || git commit -m "Update live stats"
            git push
