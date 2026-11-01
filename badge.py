@@ -1,11 +1,10 @@
 # ============================================================
 # SHADOW KNIGHTS – Live-Zahlen als PNG (badge.py)
 # Erzeugt transparente PNG-Bilder mit den Live-Zahlen
-# (PNG statt SVG – normale Bilder, die chess.com nicht
-# als Code behandelt). Zusätzlich die Live-Stats-Webseite
-# (index.html) für GitHub Pages.
+# (Mitglieder + Ø-Rating) – PNG ist das sicherste Bildformat
+# für chess.com-Seitenleisten.
 #
-# badge.py: kompletten Inhalt der alten Datei ersetzen!
+# Datei: badge.py  (kompletten Inhalt der alten badge.py ersetzen!)
 # ============================================================
 
 import json
@@ -13,44 +12,45 @@ import urllib.request
 from PIL import Image, ImageDraw, ImageFont
 
 # --- EINSTELLUNGEN -----------------------------------------
-CLUB_SLUG = "shadow-knights34"   # Teil hinter chess.com/club/
+CLUB_SLUG = "shadow-knights34"   # Der Teil hinter chess.com/club/
 CLUB_URL = "https://www.chess.com/club/shadow-knights34"
-# ------------------------------------------------------------
+# -----------------------------------------------------------
 
 API_URL = f"https://api.chess.com/pub/club/{CLUB_SLUG}"
+
 headers = {"User-Agent": "ShadowKnightsLiveBadge/1.0 (Club-Sidebar)"}
 req = urllib.request.Request(API_URL, headers=headers)
 
 with urllib.request.urlopen(req) as response:
     data = json.loads(response.read().decode())
 
+# Live-Zahlen aus der API
 members = data.get("members_count", 0)
 avg_rating = round(data.get("average_daily_rating", 0))
 
-# --- 1) Transparente PNG-Zahlen ------------------------------
-# Schriftart auf GitHub-Runnern vorhanden (DejaVu Sans Bold)
+# --- PNG-Erzeugung (transparente Zahl, passend zur Schrift) --
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+FONT = ImageFont.truetype(FONT_PATH, 28)
 
-def make_number_png(value, filename, rgb):
-    font = ImageFont.truetype(FONT_PATH, 28)
+def make_number_png(value, filename, hex_color):
+    rgb = tuple(int(hex_color[i:i+2], 16) for i in (1, 3, 5))
     text = str(value)
-    dummy = Image.new("RGBA", (10, 10))
-    d = ImageDraw.Draw(dummy)
-    bbox = d.textbbox((0, 0), text, font=font)
-    w = bbox[2] - bbox[0]
-    h = bbox[3] - bbox[1]
-    img = Image.new("RGBA", (w + 16, h + 16), (0, 0, 0, 0))
+    # Textgroesse messen
+    messer = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
+    bbox = messer.textbbox((0, 0), text, font=FONT)
+    breite = bbox[2] - bbox[0] + 8
+    hoehe = bbox[3] - bbox[1] + 8
+    img = Image.new("RGBA", (breite, hoehe), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    draw.text((8 - bbox[0], 8 - bbox[1]), text, font=font, fill=rgb + (255,))
+    draw.text((4 - bbox[0], 4 - bbox[1]), text, font=FONT, fill=rgb + (255,))
     img.save(filename)
+    print(f"Erzeugt: {filename} ({text})")
 
-# Mitgliederzahl: Neonblau #7df9ff -> (125, 249, 255)
-make_number_png(members, "members.png", (125, 249, 255))
+# Mitgliederzahl (Neonblau) und Rating (Violett) als PNG
+make_number_png(members, "members.png", "#7df9ff")
+make_number_png(avg_rating, "rating.png", "#b57edd")
 
-# Durchschnittsrating: Violett #b57edd -> (181, 126, 221)
-make_number_png(avg_rating, "rating.png", (181, 126, 221))
-
-# --- 2) Live-Stats-Webseite (index.html) ---------------------
+# --- Live-Stats-Webseite bleibt wie bisher (index.html) -----
 html = f"""<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -79,15 +79,9 @@ html = f"""<!DOCTYPE html>
 <body>
   <div class="box">
     <h1>&#9876;&#65039; SHADOW KNIGHTS LIVE-STATS &#9876;&#65039;</h1>
-    <div class="stat">
-      <div class="zahl">{members}</div>
-      <div class="label">RITTER IM CLUB</div>
-    </div>
+    <div class="stat"><div class="zahl">{members}</div><div class="label">RITTER IM CLUB</div></div>
     <hr class="trenner">
-    <div class="stat violett">
-      <div class="zahl">&#216; {avg_rating}</div>
-      <div class="label">T&Auml;GLICHES-SCHACH-RATING</div>
-    </div>
+    <div class="stat violett"><div class="zahl">&#216; {avg_rating}</div><div class="label">T&Auml;GLICHES-SCHACH-RATING</div></div>
     <a class="button" href="{CLUB_URL}" target="_blank" rel="noopener">&#9876;&#65039; ZUM CLUB</a>
     <div class="fussnote">Diese Zahlen werden automatisch jede Stunde aktualisiert.</div>
   </div>
@@ -100,7 +94,10 @@ with open("index.html", "w", encoding="utf-8") as f:
 print(f"OK: {members} Mitglieder, Ø {avg_rating} -> members.png, rating.png, index.html")
 
 # ============================================================
-# Datei: .github/workflows/update-badge.yml  (ersetzen!)
+# Datei: .github/workflows/update-badge.yml
+# WICHTIG: zwei Veraenderungen gegenueber der alten Version!
+#   1. Neue Zeile:  - run: pip install pillow   (vor python badge.py)
+#   2. git add: members.png rating.png index.html
 # ============================================================
 
 # name: Live-Stats Update
@@ -128,11 +125,15 @@ print(f"OK: {members} Mitglieder, Ø {avg_rating} -> members.png, rating.png, in
 #           git push
 
 # ============================================================
-# SIDEBAR-EINBAU (PNG über GitHub Pages):
+# SIDEBAR-EINBAU (neue PNG-Adressen!):
 # ============================================================
 #
-# <img src="https://shadow-knight34.github.io/Club/members.png"
-#      style="height: 16px; vertical-align: middle;" alt="Mitglieder" />
+# <img src="https://raw.githubusercontent.com/SHADOW-KNIGHT34/Club/main/members.png"
+#      style="height: 14px; vertical-align: middle;" alt="Mitglieder" />
 #
-# <img src="https://shadow-knight34.github.io/Club/rating.png"
-#      style="height: 16px; vertical-align: middle;" alt="Rating" />
+# <img src="https://raw.githubusercontent.com/SHADOW-KNIGHT34/Club/main/rating.png"
+#      style="height: 14px; vertical-align: middle;" alt="Rating" />
+#
+# Alternativ ueber GitHub Pages:
+#   https://shadow-knight34.github.io/Club/members.png
+#   https://shadow-knight34.github.io/Club/rating.png
